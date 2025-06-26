@@ -81,12 +81,14 @@ app.post('/api/upload-document', upload.single('document'), async (req, res) => 
     fs.unlink(filePath, (err) => {
       if (err) console.error('Error deleting temp file:', err);
     });
-    res.status(500).json({ message: 'Failed to process document.', error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Failed to process document.', error: error.message });
   }
 });
 
 // ===================================================
-// Route: Chat (With or Without Document)
+// Route: Chat (With or Without Document Context)
 // ===================================================
 app.post('/api/chat', async (req, res) => {
   const { message, documentId } = req.body;
@@ -96,15 +98,14 @@ app.post('/api/chat', async (req, res) => {
   }
 
   try {
+    // ✅ Only use document context IF documentId is present
     if (documentId) {
-      // Chat within uploaded Document
       const relevantDocs = await retrieveSimilarDocuments(message, documentId);
       const context = relevantDocs.map((doc) => doc.pageContent).join('\n\n');
 
       if (!context) {
         return res.status(200).json({
-          response:
-            "I couldn't find relevant information in this document.",
+          response: "I couldn't find relevant information in this document.",
           sourceDocuments: [],
         });
       }
@@ -118,7 +119,7 @@ Question: ${message}`;
       const result = await generativeModel.generateContent(prompt);
       const geminiResponse = result.response.text();
 
-      res.status(200).json({
+      return res.status(200).json({
         response: geminiResponse,
         sourceDocuments: relevantDocs.map((doc) => ({
           content: doc.pageContent,
@@ -126,7 +127,7 @@ Question: ${message}`;
         })),
       });
     } else {
-      // Chat Normally (without Document Context)
+      // ✅ General Chat Route (no document context)
       const prompt = `You are a helpful AI assistant. Answer the following question:
 Question: ${message}`;
 
@@ -134,10 +135,12 @@ Question: ${message}`;
       const result = await generativeModel.generateContent(prompt);
       const geminiResponse = result.response.text();
 
-      res.status(200).json({ response: geminiResponse });
+      return res.status(200).json({ response: geminiResponse });
     }
   } catch (error) {
-    res.status(500).json({ message: 'Failed to get a response from the chatbot.', error: error.message });
+    res
+      .status(500)
+      .json({ message: 'Failed to get a response from the chatbot.', error: error.message });
   }
 });
 

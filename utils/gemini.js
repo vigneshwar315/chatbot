@@ -8,19 +8,18 @@ if (!GEMINI_API_KEY) {
 
 const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
-const getEmbeddingModel = () => {
-    // text-embedding-004 is a good general-purpose embedding model
-    // gemini-embedding-exp-03-07 might also be an option if available and suited for your region/needs
-    return genAI.get  ;
-};
-
-const getGenerativeModel = () => {
-    // gemini-1.5-flash is a fast and cost-effective model, good for many chat applications
-    // gemini-1.5-pro offers higher quality for more complex tasks
-    return genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+const getGenerativeModel = (modelName = 'gemini-1.5-flash') => {
+    return genAI.getGenerativeModel({ 
+        model: modelName,
+        generationConfig: {
+            temperature: 0.9,
+            topP: 1,
+            topK: 32,
+            maxOutputTokens: 4096,
+        }
+    });
 };
 
 module.exports = {
-    getEmbeddingModel,
-    getGenerativeModel,
+    getGenerativeModel
 };
